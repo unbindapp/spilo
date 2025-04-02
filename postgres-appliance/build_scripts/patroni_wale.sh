@@ -38,7 +38,7 @@ if [ "$DEMO" != "true" ]; then
 
     find /usr/share/python-babel-localedata/locale-data -type f ! -name 'en_US*.dat' -delete
 
-    pip3 install filechunkio protobuf \
+    pip3 install --break-system-packages filechunkio protobuf \
             'git+https://github.com/zalando-pg/wal-e.git#egg=wal-e[aws,google,swift]' \
             'git+https://github.com/zalando/pg_view.git@master#egg=pg-view'
 
@@ -48,7 +48,7 @@ else
     EXTRAS=""
 fi
 
-pip3 install "patroni[kubernetes$EXTRAS]==$PATRONIVERSION"
+pip3 install --break-system-packages "patroni[kubernetes$EXTRAS]==$PATRONIVERSION"
 
 for d in /usr/local/lib/python3.10 /usr/lib/python3; do
     cd $d/dist-packages
