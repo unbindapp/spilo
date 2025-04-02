@@ -18,11 +18,10 @@ apt-cache depends patroni \
         | grep -Ev '^python3-(sphinx|etcd|consul|kazoo|kubernetes)' \
         | xargs apt-get install -y "${BUILD_PACKAGES[@]}" python3-pystache python3-requests
 
-pip3 install setuptools
-
 if [ "$DEMO" != "true" ]; then
     EXTRAS=",etcd,consul,zookeeper,aws"
     apt-get install -y \
+        python3-setuptools \
         python3-etcd \
         python3-consul \
         python3-kazoo \
