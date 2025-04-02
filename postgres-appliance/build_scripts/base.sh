@@ -13,7 +13,7 @@ sed -i 's/^#\s*\(deb.*universe\)$/\1/g' /etc/apt/sources.list
 
 apt-get update
 
-BUILD_PACKAGES=(devscripts equivs build-essential fakeroot debhelper git gcc libc6-dev make cmake libevent-dev libbrotli-dev libssl-dev libkrb5-dev)
+BUILD_PACKAGES=(devscripts equivs build-essential fakeroot debhelper git gcc libc6-dev make cmake libevent-dev libbrotli-dev libssl-dev libkrb5-dev pgxnclient)
 if [ "$DEMO" = "true" ]; then
     export DEB_PG_SUPPORTED_VERSIONS="$PGVERSION"
     WITH_PERL=false
@@ -28,7 +28,7 @@ else
                     libc-ares-dev
                     pandoc
                     pkg-config)
-    apt-get install -y "${BUILD_PACKAGES[@]}" libcurl4
+    apt-get install -y "${BUILD_PACKAGES[@]}" libcurl4 libsodium-dev libsodium23
 
     # install pam_oauth2.so
     git clone -b "$PAM_OAUTH2" --recurse-submodules https://github.com/zalando-pg/pam-oauth2.git
@@ -66,8 +66,21 @@ apt-get install -y \
     python3.10 \
     python3-psycopg2
 
+git clone https://github.com/michelp/pgjwt.git /pgjwt
+git clone https://github.com/supabase/pg_net.git /pg_net
+git clone https://github.com/supabase/pg_graphql.git /pg_graphql
+ (
+     cd /pg_graphql
+     git checkout v1.5.11
+ )
+
 # forbid creation of a main cluster when package is installed
 sed -ri 's/#(create_main_cluster) .*$/\1 = false/' /etc/postgresql-common/createcluster.conf
+
+# Rust
+ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+ source "$HOME/.cargo/env"
+ cargo install --locked cargo-pgrx@0.13.1
 
 for version in $DEB_PG_SUPPORTED_VERSIONS; do
     sed -i "s/ main.*$/ main $version/g" /etc/apt/sources.list.d/pgdg.list
@@ -157,6 +170,39 @@ for version in $DEB_PG_SUPPORTED_VERSIONS; do
             "${EXTRA_EXTENSIONS[@]}"; do
         make -C "$n" USE_PGXS=1 clean install-strip
     done
+
+    cp /pgjwt/*.sql /pgjwt/*.control /usr/share/postgresql/${version}/extension/
+     if [ "${version%.*}" -ge 11 ]; then
+        PATH="${PATH}:/usr/lib/postgresql/${version}/bin" pgxn install vector
+     fi
+
+     if [ "${version%.*}" -ge 14 ]; then
+         cargo pgrx init --pg${version%.*} /usr/lib/postgresql/$version/bin/pg_config
+         PATH="${PATH}:/usr/lib/postgresql/${version}/bin" pgxn install pgsodium
+         (
+             cd /pg_graphql
+             cargo pgrx install --pg-config /usr/lib/postgresql/$version/bin/pg_config
+         )         
+     fi
+
+ 
+     if [ "${version%.*}" -ge 14 ]; then
+         PATH="${PATH}:/usr/lib/postgresql/${version}/bin" pgxn install pgsodium
+         (
+             cd /pg_graphql
+             cargo pgrx install --pg-config /usr/lib/postgresql/$version/bin/pg_config
+         )
+     fi
+
+    # pg_net install
+     if [ "${version%.*}" -ge 12 ]; then
+         (
+             cd /pg_net
+             make PG_CONFIG="/usr/lib/postgresql/$version/bin/pg_config"
+             make PG_CONFIG="/usr/lib/postgresql/$version/bin/pg_config" install
+             make PG_CONFIG="/usr/lib/postgresql/$version/bin/pg_config" clean             
+         )
+     fi
 done
 
 apt-get install -y skytools3-ticker pgbouncer
@@ -171,7 +217,7 @@ done
 if [ "$DEMO" != "true" ]; then
     for version in $DEB_PG_SUPPORTED_VERSIONS; do
         # create postgis symlinks to make it possible to perform update
-        ln -s "postgis-${POSTGIS_VERSION%.*}.so" "/usr/lib/postgresql/${version}/lib/postgis-2.5.so"
+        ln -s "postgis-${POSTGIS_VERSION%.*}.so" "/usr/lib/postgresql/${version}/lib/postgis-2.5.so" || true
     done
 fi
 
@@ -293,5 +339,7 @@ rm -rf /var/lib/apt/lists/* \
         /usr/lib/postgresql/*/bin/droplang \
         /usr/lib/postgresql/*/bin/dropuser \
         /usr/lib/postgresql/*/bin/pg_standby \
-        /usr/lib/postgresql/*/bin/pltcl_*
+        /usr/lib/postgresql/*/bin/pltcl_* \
+        /pgjwt \
+        /pg_net 
 find /var/log -type f -exec truncate --size 0 {} \;
