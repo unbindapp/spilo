@@ -68,6 +68,10 @@ apt-get install -y \
 
 git clone https://github.com/michelp/pgjwt.git /pgjwt
 git clone https://github.com/supabase/pg_net.git /pg_net
+ (
+    cd /pg_net
+    git checkout v0.14.0
+ )
 git clone https://github.com/supabase/pg_graphql.git /pg_graphql
  (
      cd /pg_graphql
@@ -172,37 +176,26 @@ for version in $DEB_PG_SUPPORTED_VERSIONS; do
     done
 
     cp /pgjwt/*.sql /pgjwt/*.control /usr/share/postgresql/${version}/extension/
-     if [ "${version%.*}" -ge 11 ]; then
-        PATH="${PATH}:/usr/lib/postgresql/${version}/bin" pgxn install vector
-     fi
 
-     if [ "${version%.*}" -ge 14 ]; then
-         cargo pgrx init --pg${version%.*} /usr/lib/postgresql/$version/bin/pg_config
-         PATH="${PATH}:/usr/lib/postgresql/${version}/bin" pgxn install pgsodium
-         (
-             cd /pg_graphql
-             cargo pgrx install --pg-config /usr/lib/postgresql/$version/bin/pg_config
-         )         
-     fi
+    if [ "${version%.*}" -ge 14 ]; then
+        cargo pgrx init --pg${version%.*} /usr/lib/postgresql/$version/bin/pg_config
+        PATH="${PATH}:/usr/lib/postgresql/${version}/bin" pgxn install pgsodium
+        (
+            cd /pg_graphql
+            cargo pgrx install --pg-config /usr/lib/postgresql/$version/bin/pg_config
+        )         
+    fi
 
- 
-     if [ "${version%.*}" -ge 14 ]; then
-         PATH="${PATH}:/usr/lib/postgresql/${version}/bin" pgxn install pgsodium
-         (
-             cd /pg_graphql
-             cargo pgrx install --pg-config /usr/lib/postgresql/$version/bin/pg_config
-         )
-     fi
 
     # pg_net install
-     if [ "${version%.*}" -ge 12 ]; then
-         (
-             cd /pg_net
-             make PG_CONFIG="/usr/lib/postgresql/$version/bin/pg_config"
-             make PG_CONFIG="/usr/lib/postgresql/$version/bin/pg_config" install
-             make PG_CONFIG="/usr/lib/postgresql/$version/bin/pg_config" clean             
-         )
-     fi
+    if [ "${version%.*}" -ge 12 ]; then
+        (
+            cd /pg_net
+            make PG_CONFIG="/usr/lib/postgresql/$version/bin/pg_config"
+            make PG_CONFIG="/usr/lib/postgresql/$version/bin/pg_config" install
+            make PG_CONFIG="/usr/lib/postgresql/$version/bin/pg_config" clean             
+        )
+    fi
 done
 
 apt-get install -y skytools3-ticker pgbouncer
