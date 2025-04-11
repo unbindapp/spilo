@@ -78,7 +78,7 @@ jobs:
           platforms: ${{ matrix.platform }}
           provenance: false
           push: true
-          file: ./Dockerfile
+          file: ./postgres-appliance/Dockerfile
           tags: unbindapp/spilo:${{ matrix.pgversion }}-${{ needs.setup_env.outputs.branch_name }}-${{ env.GITHUB_RUN_ID }}-${{ matrix.arch }}
           build-args: |
             PGVERSION=${{ matrix.pgversion }}
