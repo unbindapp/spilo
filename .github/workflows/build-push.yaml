@@ -47,13 +47,14 @@ jobs:
     strategy:
       matrix:
         pgversion: [14, 15, 16, 17]
+        arch: [amd64, arm64]
         include:
-          - platform: linux/amd64
+          - arch: amd64
+            platform: linux/amd64
             runs-on: ubuntu-24.04
-            arch: amd64
-          - platform: linux/arm64
+          - arch: arm64
+            platform: linux/arm64
             runs-on: ubuntu-24.04-arm
-            arch: arm64
     runs-on: ${{ matrix.runs-on }}
     env:
       GITHUB_RUN_ID: ${{ github.run_id }}
@@ -73,7 +74,7 @@ jobs:
         if: success()
         uses: docker/build-push-action@v5
         with:
-          context: .
+          context: ./postgres-appliance
           platforms: ${{ matrix.platform }}
           provenance: false
           push: true
@@ -83,7 +84,7 @@ jobs:
             PGVERSION=${{ matrix.pgversion }}
             BASE_IMAGE=ubuntu:24.04
             DEMO=false
-            COMPRESS=false
+            COMPRESS=true
 
   create_manifests:
     name: 📦 Create and Push Multi-Arch Manifests for PostgreSQL ${{ matrix.pgversion }}
