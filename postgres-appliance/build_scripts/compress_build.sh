@@ -27,6 +27,6 @@ XZ_OPT=-e9v tar -X /exclude -cpJf a.tar.xz "${save_dirs[@]}"
 
 rm -fr /usr/local/lib/python*
 
-/usr/bin/busybox sh -c "(find ${save_dirs[*]} -not -type d && cat /exclude /exclude && echo exclude) | sort | uniq -u | xargs /bin/busybox rm"
+/usr/bin/busybox sh -c "(find ${save_dirs[*]} -not -type d && cat /exclude /exclude && echo exclude) | sort | uniq -u | xargs /usr/bin/busybox rm"
 /usr/bin/busybox --install -s
 /usr/bin/busybox sh -c "find ${save_dirs[*]} -type d -depth -exec rmdir -p {}; 2> /dev/null"
