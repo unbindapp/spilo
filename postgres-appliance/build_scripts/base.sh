@@ -315,6 +315,7 @@ if [ "$DEMO" != "true" ]; then
 fi
 
 # Clean up
+rustup self uninstall -y
 rm -rf /var/lib/apt/lists/* \
         /var/cache/debconf/* \
         /builddeps \
@@ -334,5 +335,8 @@ rm -rf /var/lib/apt/lists/* \
         /usr/lib/postgresql/*/bin/pg_standby \
         /usr/lib/postgresql/*/bin/pltcl_* \
         /pgjwt \
-        /pg_net 
+        /pg_net \
+        "$HOME/.cargo" \
+        "$HOME/.rustup" \
+         /usr/local/cargo 
 find /var/log -type f -exec truncate --size 0 {} \;
