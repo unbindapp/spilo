@@ -84,7 +84,7 @@ jobs:
             PGVERSION=${{ matrix.pgversion }}
             BASE_IMAGE=ubuntu:24.04
             DEMO=false
-            COMPRESS=true
+            COMPRESS=false
 
   create_manifests:
     name: 📦 Create and Push Multi-Arch Manifests for PostgreSQL ${{ matrix.pgversion }}
