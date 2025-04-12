@@ -336,6 +336,7 @@ rm -rf /var/lib/apt/lists/* \
         /usr/lib/postgresql/*/bin/pltcl_* \
         /pgjwt \
         /pg_net \
+        /pg_graphql \
         "$HOME/.cargo" \
         "$HOME/.rustup" \
          /usr/local/cargo 
