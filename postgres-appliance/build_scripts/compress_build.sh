@@ -3,7 +3,7 @@
 set -ex
 
 apt-get update
-apt-get install -y busybox-static xz-utils
+apt-get install -y busybox xz-utils
 apt-get clean
 
 rm -rf /var/lib/apt/lists/* /var/cache/debconf/* /usr/share/doc /usr/share/man /etc/rc?.d /etc/systemd

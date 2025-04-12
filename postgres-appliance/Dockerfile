@@ -1,57 +1,24 @@
 ARG BASE_IMAGE=ubuntu:24.04
 ARG PGVERSION=17
-ARG DEMO=false
-ARG COMPRESS=false
-ARG ADDITIONAL_LOCALES=
 
-
-FROM ubuntu:18.04 as ubuntu-18
-
-ARG ADDITIONAL_LOCALES
-
-COPY build_scripts/locales.sh /builddeps/
-
-RUN bash /builddeps/locales.sh
-
-
+# === First stage: build dependencies ===
 FROM $BASE_IMAGE as dependencies-builder
-
-ARG DEMO
-
 ENV WALG_VERSION=v3.0.3
-
 COPY build_scripts/dependencies.sh /builddeps/
-
 COPY dependencies/debs /builddeps/
-
 RUN bash /builddeps/dependencies.sh
 
+# === Second stage: locale preparation ===
+FROM ubuntu:18.04 as locale-builder
+COPY build_scripts/locales.sh /builddeps/
+RUN bash /builddeps/locales.sh
 
-FROM $BASE_IMAGE as builder-false
-
-ARG DEMO
-ARG ADDITIONAL_LOCALES
-
-COPY build_scripts/prepare.sh build_scripts/locales.sh /builddeps/
-
-RUN bash /builddeps/prepare.sh
-
-COPY --from=ubuntu-18 /usr/lib/locale/locale-archive /usr/lib/locale/locale-archive.18
-
-COPY cron_unprivileged.c /builddeps/
-COPY build_scripts/base.sh /builddeps/
-COPY --from=dependencies-builder /builddeps/*.deb /builddeps/
-
+# === Main build stage ===
+FROM $BASE_IMAGE as builder
 ARG PGVERSION
-ARG TIMESCALEDB_APACHE_ONLY=true
-ARG TIMESCALEDB_TOOLKIT=true
-ARG COMPRESS
-ARG PGOLDVERSIONS=""
-ARG WITH_PERL=false
+ARG ADDITIONAL_LOCALES=""
 
-ARG DEB_PG_SUPPORTED_VERSIONS="$PGOLDVERSIONS $PGVERSION"
-
-# Install PostgreSQL, extensions and contribs
+# Set PostgreSQL version and extension versions
 ENV POSTGIS_VERSION=3.5 \
     BG_MON_COMMIT=7f5887218790b263fe3f42f85f4ddc9c8400b154 \
     PG_AUTH_MON_COMMIT=fe099eef7662cbc85b0b79191f47f52f1e96b779 \
@@ -60,66 +27,65 @@ ENV POSTGIS_VERSION=3.5 \
     PLPROFILER=REL4_2_5 \
     PG_PROFILE=4.7 \
     PAM_OAUTH2=v1.0.1 \
-    PG_PERMISSIONS_COMMIT=f4b7c18676fa64236a1c8e28d34a35764e4a70e2
+    PG_PERMISSIONS_COMMIT=f4b7c18676fa64236a1c8e28d34a35764e4a70e2 \
+    PATRONIVERSION=4.0.4 \
+    WALE_VERSION=1.1.1
 
+# Copy build scripts and prepare the system
+COPY build_scripts/prepare.sh build_scripts/locales.sh /builddeps/
+RUN bash /builddeps/prepare.sh
+
+# Copy locale archive from the locale builder
+COPY --from=locale-builder /usr/lib/locale/locale-archive /usr/lib/locale/locale-archive.18
+
+# Copy dependencies and build scripts
+COPY cron_unprivileged.c /builddeps/
+COPY build_scripts/base.sh /builddeps/
+COPY --from=dependencies-builder /builddeps/*.deb /builddeps/
+
+# Install PostgreSQL and extensions in a single RUN to reduce layers
 WORKDIR /builddeps
-RUN bash base.sh
+RUN bash base.sh && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Install wal-g
+# Copy wal-g and install patroni and wal-e
 COPY --from=dependencies-builder /builddeps/wal-g /usr/local/bin/
+COPY build_scripts/patroni_wale.sh /builddeps/
+RUN bash /builddeps/patroni_wale.sh && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
+    # Remove unnecessary files
+    rm -rf /usr/share/doc /usr/share/man /usr/share/info && \
+    find /var/log -type f -delete && \
+    find /usr/lib/python* -name '__pycache__' -exec rm -r {} + || true && \
+    find /usr/local/lib/python* -name '__pycache__' -exec rm -r {} + || true
 
-COPY build_scripts/patroni_wale.sh build_scripts/compress_build.sh /builddeps/
+# === Final stage ===
+FROM scratch
+COPY --from=builder / /
 
-# Install patroni and wal-e
-ENV PATRONIVERSION=4.0.4
-ENV WALE_VERSION=1.1.1
-
-WORKDIR /
-
-RUN bash /builddeps/patroni_wale.sh
-
-RUN if [ "$COMPRESS" = "true" ]; then bash /builddeps/compress_build.sh; fi
-
-
-FROM scratch as builder-true
-COPY --from=builder-false / /
-
-
-FROM builder-${COMPRESS}
-
-LABEL maintainer="Team ACID @ Zalando <team-acid@zalando.de>"
-
-ARG PGVERSION
-ARG DEMO
-ARG COMPRESS
-
-EXPOSE 5432 8008 8080
-
+# Set environment variables
 ENV LC_ALL=en_US.utf-8 \
     PATH=$PATH:/usr/lib/postgresql/$PGVERSION/bin \
     PGHOME=/home/postgres \
     RW_DIR=/run \
-    DEMO=$DEMO
+    DEMO=false \
+    USE_OLD_LOCALES=false
 
 ENV WALE_ENV_DIR=$RW_DIR/etc/wal-e.d/env \
     LOG_ENV_DIR=$RW_DIR/etc/log.d/env \
-    PGROOT=$PGHOME/pgdata/pgroot
+    PGROOT=$PGHOME/pgdata/pgroot \
+    PGDATA=$PGHOME/pgdata/pgroot/data \
+    PGLOG=$PGHOME/pgdata/pgroot/pg_log
 
-ENV PGDATA=$PGROOT/data \
-    PGLOG=$PGROOT/pg_log
-
-ENV USE_OLD_LOCALES=false
-
+# Setup final configuration
 WORKDIR $PGHOME
-
 COPY motd /etc/
 COPY runit /etc/service/
 COPY pgq_ticker.ini $PGHOME/
-COPY build_scripts/post_build.sh /builddeps/
-
-RUN sh /builddeps/post_build.sh && rm -rf /builddeps/
-
 COPY scripts bootstrap major_upgrade /scripts/
 COPY launch.sh /
 
+EXPOSE 5432 8008 8080
 CMD ["/bin/sh", "/launch.sh", "init"]
