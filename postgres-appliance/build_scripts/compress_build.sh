@@ -81,7 +81,7 @@ echo "Removing unnecessary files..."
 xargs -a "$files_to_remove" -r -n 100 rm -f 2>/dev/null || true
 
 # Clean up temp files
-rm -f "$find_output" "$files_to_remove"
+rm -f "$find_output" "$files_to_remove" || true
 
 # Install busybox utilities
 $BUSYBOX_PATH --install -s
