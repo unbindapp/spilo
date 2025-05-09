@@ -80,11 +80,12 @@ jobs:
             ${{ runner.os }}-${{ matrix.arch }}-buildx-${{ matrix.pgversion }}-
             ${{ runner.os }}-${{ matrix.arch }}-buildx-
 
-      - name: Login to registry
+      - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKER_USER }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push Spilo image
         if: success()
@@ -95,7 +96,7 @@ jobs:
           provenance: false
           push: true
           file: ./postgres-appliance/Dockerfile
-          tags: unbindapp/spilo:${{ matrix.pgversion }}-${{ needs.setup_env.outputs.branch_name }}-${{ env.GITHUB_RUN_ID }}-${{ matrix.arch }}
+          tags: ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-${{ needs.setup_env.outputs.branch_name }}-${{ env.GITHUB_RUN_ID }}-${{ matrix.arch }}
           build-args: |
             PGVERSION=${{ matrix.pgversion }}
           # Use the cache
@@ -118,33 +119,34 @@ jobs:
     env:
       GITHUB_RUN_ID: ${{ github.run_id }}
     steps:
-      - name: Login to registry
+      - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKER_USER }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create and push manifest for PG ${{ matrix.pgversion }}
         run: |
           # Create run-specific tag with both architectures
-          docker manifest create unbindapp/spilo:${{ matrix.pgversion }}-${{ needs.setup_env.outputs.branch_name }}-${{ env.GITHUB_RUN_ID }} \
-            --amend unbindapp/spilo:${{ matrix.pgversion }}-${{ needs.setup_env.outputs.branch_name }}-${{ env.GITHUB_RUN_ID }}-amd64 \
-            --amend unbindapp/spilo:${{ matrix.pgversion }}-${{ needs.setup_env.outputs.branch_name }}-${{ env.GITHUB_RUN_ID }}-arm64
+          docker manifest create ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-${{ needs.setup_env.outputs.branch_name }}-${{ env.GITHUB_RUN_ID }} \
+            --amend ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-${{ needs.setup_env.outputs.branch_name }}-${{ env.GITHUB_RUN_ID }}-amd64 \
+            --amend ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-${{ needs.setup_env.outputs.branch_name }}-${{ env.GITHUB_RUN_ID }}-arm64
 
-          docker manifest annotate --arch amd64 --os linux unbindapp/spilo:${{ matrix.pgversion }}-${{ needs.setup_env.outputs.branch_name }}-${{ env.GITHUB_RUN_ID }} unbindapp/spilo:${{ matrix.pgversion }}-${{ needs.setup_env.outputs.branch_name }}-${{ env.GITHUB_RUN_ID }}-amd64
-          docker manifest annotate --arch arm64 --os linux unbindapp/spilo:${{ matrix.pgversion }}-${{ needs.setup_env.outputs.branch_name }}-${{ env.GITHUB_RUN_ID }} unbindapp/spilo:${{ matrix.pgversion }}-${{ needs.setup_env.outputs.branch_name }}-${{ env.GITHUB_RUN_ID }}-arm64
+          docker manifest annotate --arch amd64 --os linux ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-${{ needs.setup_env.outputs.branch_name }}-${{ env.GITHUB_RUN_ID }} ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-${{ needs.setup_env.outputs.branch_name }}-${{ env.GITHUB_RUN_ID }}-amd64
+          docker manifest annotate --arch arm64 --os linux ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-${{ needs.setup_env.outputs.branch_name }}-${{ env.GITHUB_RUN_ID }} ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-${{ needs.setup_env.outputs.branch_name }}-${{ env.GITHUB_RUN_ID }}-arm64
 
-          docker manifest push unbindapp/spilo:${{ matrix.pgversion }}-${{ needs.setup_env.outputs.branch_name }}-${{ env.GITHUB_RUN_ID }}
+          docker manifest push ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-${{ needs.setup_env.outputs.branch_name }}-${{ env.GITHUB_RUN_ID }}
 
           # Tag as version-latest
-          docker manifest create unbindapp/spilo:${{ matrix.pgversion }}-latest \
-            --amend unbindapp/spilo:${{ matrix.pgversion }}-${{ needs.setup_env.outputs.branch_name }}-${{ env.GITHUB_RUN_ID }}-amd64 \
-            --amend unbindapp/spilo:${{ matrix.pgversion }}-${{ needs.setup_env.outputs.branch_name }}-${{ env.GITHUB_RUN_ID }}-arm64
+          docker manifest create ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-latest \
+            --amend ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-${{ needs.setup_env.outputs.branch_name }}-${{ env.GITHUB_RUN_ID }}-amd64 \
+            --amend ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-${{ needs.setup_env.outputs.branch_name }}-${{ env.GITHUB_RUN_ID }}-arm64
             
-          docker manifest annotate --arch amd64 --os linux unbindapp/spilo:${{ matrix.pgversion }}-latest unbindapp/spilo:${{ matrix.pgversion }}-${{ needs.setup_env.outputs.branch_name }}-${{ env.GITHUB_RUN_ID }}-amd64
-          docker manifest annotate --arch arm64 --os linux unbindapp/spilo:${{ matrix.pgversion }}-latest unbindapp/spilo:${{ matrix.pgversion }}-${{ needs.setup_env.outputs.branch_name }}-${{ env.GITHUB_RUN_ID }}-arm64
+          docker manifest annotate --arch amd64 --os linux ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-latest ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-${{ needs.setup_env.outputs.branch_name }}-${{ env.GITHUB_RUN_ID }}-amd64
+          docker manifest annotate --arch arm64 --os linux ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-latest ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-${{ needs.setup_env.outputs.branch_name }}-${{ env.GITHUB_RUN_ID }}-arm64
 
-          docker manifest push unbindapp/spilo:${{ matrix.pgversion }}-latest
+          docker manifest push ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-latest
 
   # Optional: Add a separate step to tag the latest PostgreSQL version as the default "latest" tag
   tag_latest:
@@ -154,19 +156,20 @@ jobs:
     env:
       GITHUB_RUN_ID: ${{ github.run_id }}
     steps:
-      - name: Login to registry
+      - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKER_USER }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Tag PostgreSQL 17 as latest
         run: |
-          docker manifest create unbindapp/spilo:latest \
-            --amend unbindapp/spilo:17-${{ needs.setup_env.outputs.branch_name }}-${{ env.GITHUB_RUN_ID }}-amd64 \
-            --amend unbindapp/spilo:17-${{ needs.setup_env.outputs.branch_name }}-${{ env.GITHUB_RUN_ID }}-arm64
+          docker manifest create ghcr.io/${{ github.repository_owner }}/spilo:latest \
+            --amend ghcr.io/${{ github.repository_owner }}/spilo:17-${{ needs.setup_env.outputs.branch_name }}-${{ env.GITHUB_RUN_ID }}-amd64 \
+            --amend ghcr.io/${{ github.repository_owner }}/spilo:17-${{ needs.setup_env.outputs.branch_name }}-${{ env.GITHUB_RUN_ID }}-arm64
             
-          docker manifest annotate --arch amd64 --os linux unbindapp/spilo:latest unbindapp/spilo:17-${{ needs.setup_env.outputs.branch_name }}-${{ env.GITHUB_RUN_ID }}-amd64
-          docker manifest annotate --arch arm64 --os linux unbindapp/spilo:latest unbindapp/spilo:17-${{ needs.setup_env.outputs.branch_name }}-${{ env.GITHUB_RUN_ID }}-arm64
+          docker manifest annotate --arch amd64 --os linux ghcr.io/${{ github.repository_owner }}/spilo:latest ghcr.io/${{ github.repository_owner }}/spilo:17-${{ needs.setup_env.outputs.branch_name }}-${{ env.GITHUB_RUN_ID }}-amd64
+          docker manifest annotate --arch arm64 --os linux ghcr.io/${{ github.repository_owner }}/spilo:latest ghcr.io/${{ github.repository_owner }}/spilo:17-${{ needs.setup_env.outputs.branch_name }}-${{ env.GITHUB_RUN_ID }}-arm64
 
-          docker manifest push unbindapp/spilo:latest
+          docker manifest push ghcr.io/${{ github.repository_owner }}/spilo:latest
