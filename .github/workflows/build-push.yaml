@@ -8,42 +8,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  setup_env:
-    name: ⚙️ Setup environment
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Add SHORT_SHA env property
-        run: echo "SHORT_SHA=`echo ${GITHUB_SHA::7}`" >> $GITHUB_ENV
-
-      - name: Put commit msg in environment
-        run: echo "COMMIT_MSG=${{ github.event.head_commit.message }}" >> $GITHUB_ENV
-
-      - name: Escape commit message
-        run: |
-          echo "COMMIT_MSG=$(echo $COMMIT_MSG | tr -d \'\\\")" >> $GITHUB_ENV
-
-      - name: Get branch name (merge)
-        if: github.event_name != 'pull_request'
-        shell: bash
-        run: echo "BRANCH_NAME=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
-
-      - name: Get branch name (pull request)
-        if: github.event_name == 'pull_request'
-        shell: bash
-        run: echo "BRANCH_NAME=$(echo ${GITHUB_HEAD_REF} | tr / -)" >> $GITHUB_ENV
-
-      - name: Set build start in env variable
-        run: echo "BUILD_START=$(date +%s)" >> $GITHUB_ENV
-
-    outputs:
-      short_sha: ${{ env.SHORT_SHA }}
-      commit_msg: ${{ env.COMMIT_MSG }}
-      branch_name: ${{ env.BRANCH_NAME }}
-      build_start: ${{ env.BUILD_START }}
-
   build_spilo:
     name: 🔨 Build Spilo ${{ matrix.pgversion }} for ${{ matrix.arch }}
-    needs: setup_env
     strategy:
       matrix:
         pgversion: [14, 15, 16, 17]
@@ -96,7 +62,7 @@ jobs:
           provenance: false
           push: true
           file: ./postgres-appliance/Dockerfile
-          tags: ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-${{ needs.setup_env.outputs.branch_name }}-${{ env.GITHUB_RUN_ID }}-${{ matrix.arch }}
+          tags: ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-latest-${{ matrix.arch }}
           build-args: |
             PGVERSION=${{ matrix.pgversion }}
           # Use the cache
@@ -112,7 +78,7 @@ jobs:
   create_manifests:
     name: 📦 Create and Push Multi-Arch Manifests for PostgreSQL ${{ matrix.pgversion }}
     runs-on: ubuntu-24.04
-    needs: [setup_env, build_spilo]
+    needs: [build_spilo]
     strategy:
       matrix:
         pgversion: [14, 15, 16, 17]
@@ -129,22 +95,22 @@ jobs:
       - name: Create and push manifest for PG ${{ matrix.pgversion }}
         run: |
           # Create run-specific tag with both architectures
-          docker manifest create ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-${{ needs.setup_env.outputs.branch_name }}-${{ env.GITHUB_RUN_ID }} \
-            --amend ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-${{ needs.setup_env.outputs.branch_name }}-${{ env.GITHUB_RUN_ID }}-amd64 \
-            --amend ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-${{ needs.setup_env.outputs.branch_name }}-${{ env.GITHUB_RUN_ID }}-arm64
+          docker manifest create ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-latest \
+            --amend ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-latest-amd64 \
+            --amend ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-latest-arm64
 
-          docker manifest annotate --arch amd64 --os linux ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-${{ needs.setup_env.outputs.branch_name }}-${{ env.GITHUB_RUN_ID }} ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-${{ needs.setup_env.outputs.branch_name }}-${{ env.GITHUB_RUN_ID }}-amd64
-          docker manifest annotate --arch arm64 --os linux ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-${{ needs.setup_env.outputs.branch_name }}-${{ env.GITHUB_RUN_ID }} ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-${{ needs.setup_env.outputs.branch_name }}-${{ env.GITHUB_RUN_ID }}-arm64
+          docker manifest annotate --arch amd64 --os linux ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-latest ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-latest-amd64
+          docker manifest annotate --arch arm64 --os linux ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-latest ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-latest-arm64
 
-          docker manifest push ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-${{ needs.setup_env.outputs.branch_name }}-${{ env.GITHUB_RUN_ID }}
+          docker manifest push ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-latest
 
           # Tag as version-latest
           docker manifest create ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-latest \
-            --amend ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-${{ needs.setup_env.outputs.branch_name }}-${{ env.GITHUB_RUN_ID }}-amd64 \
-            --amend ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-${{ needs.setup_env.outputs.branch_name }}-${{ env.GITHUB_RUN_ID }}-arm64
+            --amend ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-latest-amd64 \
+            --amend ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-latest-arm64
             
-          docker manifest annotate --arch amd64 --os linux ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-latest ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-${{ needs.setup_env.outputs.branch_name }}-${{ env.GITHUB_RUN_ID }}-amd64
-          docker manifest annotate --arch arm64 --os linux ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-latest ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-${{ needs.setup_env.outputs.branch_name }}-${{ env.GITHUB_RUN_ID }}-arm64
+          docker manifest annotate --arch amd64 --os linux ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-latest ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-latest-amd64
+          docker manifest annotate --arch arm64 --os linux ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-latest ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-latest-arm64
 
           docker manifest push ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-latest
 
@@ -152,7 +118,7 @@ jobs:
   tag_latest:
     name: 🏷️ Tag PostgreSQL 17 as Latest
     runs-on: ubuntu-24.04
-    needs: [setup_env, create_manifests]
+    needs: [create_manifests]
     env:
       GITHUB_RUN_ID: ${{ github.run_id }}
     steps:
@@ -166,10 +132,10 @@ jobs:
       - name: Tag PostgreSQL 17 as latest
         run: |
           docker manifest create ghcr.io/${{ github.repository_owner }}/spilo:latest \
-            --amend ghcr.io/${{ github.repository_owner }}/spilo:17-${{ needs.setup_env.outputs.branch_name }}-${{ env.GITHUB_RUN_ID }}-amd64 \
-            --amend ghcr.io/${{ github.repository_owner }}/spilo:17-${{ needs.setup_env.outputs.branch_name }}-${{ env.GITHUB_RUN_ID }}-arm64
+            --amend ghcr.io/${{ github.repository_owner }}/spilo:17-latest-amd64 \
+            --amend ghcr.io/${{ github.repository_owner }}/spilo:17-latest-arm64
             
-          docker manifest annotate --arch amd64 --os linux ghcr.io/${{ github.repository_owner }}/spilo:latest ghcr.io/${{ github.repository_owner }}/spilo:17-${{ needs.setup_env.outputs.branch_name }}-${{ env.GITHUB_RUN_ID }}-amd64
-          docker manifest annotate --arch arm64 --os linux ghcr.io/${{ github.repository_owner }}/spilo:latest ghcr.io/${{ github.repository_owner }}/spilo:17-${{ needs.setup_env.outputs.branch_name }}-${{ env.GITHUB_RUN_ID }}-arm64
+          docker manifest annotate --arch amd64 --os linux ghcr.io/${{ github.repository_owner }}/spilo:latest ghcr.io/${{ github.repository_owner }}/spilo:17-latest-amd64
+          docker manifest annotate --arch arm64 --os linux ghcr.io/${{ github.repository_owner }}/spilo:latest ghcr.io/${{ github.repository_owner }}/spilo:17-latest-arm64
 
           docker manifest push ghcr.io/${{ github.repository_owner }}/spilo:latest
