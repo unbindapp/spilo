@@ -77,6 +77,11 @@ git clone https://github.com/supabase/pg_graphql.git /pg_graphql
      cd /pg_graphql
      git checkout v1.5.11
  )
+git clone https://github.com/supabase/supautils.git /supautils
+ (
+    cd /supautils
+    git checkout v2.9.1
+ )
 
 # forbid creation of a main cluster when package is installed
 sed -ri 's/#(create_main_cluster) .*$/\1 = false/' /etc/postgresql-common/createcluster.conf
@@ -198,6 +203,17 @@ for version in $DEB_PG_SUPPORTED_VERSIONS; do
             make PG_CONFIG="/usr/lib/postgresql/$version/bin/pg_config" clean             
         )
     fi
+
+    # supautils install
+    if [ "${version%.*}" -ge 13 ]; then
+        (
+            cd /supautils
+            make PG_CONFIG="/usr/lib/postgresql/$version/bin/pg_config"
+            make PG_CONFIG="/usr/lib/postgresql/$version/bin/pg_config" install
+            make PG_CONFIG="/usr/lib/postgresql/$version/bin/pg_config" clean             
+        )
+    fi
+
 done
 
 apt-get install -y skytools3-ticker pgbouncer
@@ -339,6 +355,7 @@ rm -rf /var/lib/apt/lists/* \
         /pgjwt \
         /pg_net \
         /pg_graphql \
+        /supautils \
         "$HOME/.cargo" \
         "$HOME/.rustup" \
          /usr/local/cargo 
