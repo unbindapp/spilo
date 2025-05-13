@@ -49,7 +49,9 @@ jobs:
           provenance: false
           push: true
           file: ./postgres-appliance/Dockerfile
-          tags: ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-latest-${{ matrix.arch }}
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-${{ github.run_id }}-${{ matrix.arch }}
+            ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-latest-${{ matrix.arch }}
           build-args: |
             PGVERSION=${{ matrix.pgversion }}
 
@@ -73,22 +75,22 @@ jobs:
       - name: Create and push manifest for PG ${{ matrix.pgversion }}
         run: |
           # Create run-specific tag with both architectures
-          docker manifest create ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-latest \
-            --amend ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-latest-amd64 \
-            --amend ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-latest-arm64
+          docker manifest create ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-${{ github.run_id }} \
+            --amend ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-${{ github.run_id }}-amd64 \
+            --amend ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-${{ github.run_id }}-arm64
 
-          docker manifest annotate --arch amd64 --os linux ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-latest ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-latest-amd64
-          docker manifest annotate --arch arm64 --os linux ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-latest ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-latest-arm64
+          docker manifest annotate --arch amd64 --os linux ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-${{ github.run_id }} ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-${{ github.run_id }}-amd64
+          docker manifest annotate --arch arm64 --os linux ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-${{ github.run_id }} ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-${{ github.run_id }}-arm64
 
-          docker manifest push ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-latest
+          docker manifest push ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-${{ github.run_id }}
 
           # Tag as version-latest
           docker manifest create ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-latest \
-            --amend ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-latest-amd64 \
-            --amend ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-latest-arm64
+            --amend ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-${{ github.run_id }}-amd64 \
+            --amend ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-${{ github.run_id }}-arm64
             
-          docker manifest annotate --arch amd64 --os linux ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-latest ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-latest-amd64
-          docker manifest annotate --arch arm64 --os linux ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-latest ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-latest-arm64
+          docker manifest annotate --arch amd64 --os linux ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-latest ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-${{ github.run_id }}-amd64
+          docker manifest annotate --arch arm64 --os linux ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-latest ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-${{ github.run_id }}-arm64
 
           docker manifest push ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-latest
 
@@ -110,10 +112,10 @@ jobs:
       - name: Tag PostgreSQL 17 as latest
         run: |
           docker manifest create ghcr.io/${{ github.repository_owner }}/spilo:latest \
-            --amend ghcr.io/${{ github.repository_owner }}/spilo:17-latest-amd64 \
-            --amend ghcr.io/${{ github.repository_owner }}/spilo:17-latest-arm64
+            --amend ghcr.io/${{ github.repository_owner }}/spilo:17-${{ github.run_id }}-amd64 \
+            --amend ghcr.io/${{ github.repository_owner }}/spilo:17-${{ github.run_id }}-arm64
             
-          docker manifest annotate --arch amd64 --os linux ghcr.io/${{ github.repository_owner }}/spilo:latest ghcr.io/${{ github.repository_owner }}/spilo:17-latest-amd64
-          docker manifest annotate --arch arm64 --os linux ghcr.io/${{ github.repository_owner }}/spilo:latest ghcr.io/${{ github.repository_owner }}/spilo:17-latest-arm64
+          docker manifest annotate --arch amd64 --os linux ghcr.io/${{ github.repository_owner }}/spilo:latest ghcr.io/${{ github.repository_owner }}/spilo:17-${{ github.run_id }}-amd64
+          docker manifest annotate --arch arm64 --os linux ghcr.io/${{ github.repository_owner }}/spilo:latest ghcr.io/${{ github.repository_owner }}/spilo:17-${{ github.run_id }}-arm64
 
           docker manifest push ghcr.io/${{ github.repository_owner }}/spilo:latest
