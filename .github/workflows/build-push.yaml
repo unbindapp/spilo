@@ -36,16 +36,6 @@ jobs:
             image=moby/buildkit:latest
             network=host
 
-      # Cache Docker layers
-      - name: Cache Docker layers
-        uses: actions/cache@v4
-        with:
-          path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-${{ matrix.arch }}-buildx-${{ matrix.pgversion }}-${{ hashFiles('./postgres-appliance/Dockerfile') }}
-          restore-keys: |
-            ${{ runner.os }}-${{ matrix.arch }}-buildx-${{ matrix.pgversion }}
-            ${{ runner.os }}-${{ matrix.arch }}-buildx
-
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
@@ -65,15 +55,6 @@ jobs:
           tags: ghcr.io/${{ github.repository_owner }}/spilo:${{ matrix.pgversion }}-latest-${{ matrix.arch }}
           build-args: |
             PGVERSION=${{ matrix.pgversion }}
-          # Use the cache
-          cache-from: type=local,src=/tmp/.buildx-cache
-          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
-
-      # Move cache to prevent cache growth (see https://github.com/docker/build-push-action/issues/252)
-      - name: Move cache
-        run: |
-          rm -rf /tmp/.buildx-cache
-          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
 
   create_manifests:
     name: 📦 Create and Push Multi-Arch Manifests for PostgreSQL ${{ matrix.pgversion }}
