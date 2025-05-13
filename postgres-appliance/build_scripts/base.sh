@@ -181,6 +181,7 @@ for version in $DEB_PG_SUPPORTED_VERSIONS; do
     if [ "${version%.*}" -ge 14 ]; then
         cargo pgrx init --pg"${version%.*}" /usr/lib/postgresql/"$version"/bin/pg_config
         PATH="${PATH}:/usr/lib/postgresql/${version}/bin" pgxn install pgsodium
+        PATH="${PATH}:/usr/lib/postgresql/${version}/bin" pgxn install pgmq
         (
             cd /pg_graphql
             cargo pgrx install --pg-config /usr/lib/postgresql/"$version"/bin/pg_config
