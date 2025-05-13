@@ -82,6 +82,11 @@ git clone https://github.com/supabase/supautils.git /supautils
     cd /supautils
     git checkout v2.9.1
  )
+git clone https://github.com/supabase/vault.git /vault
+ (
+    cd /vault
+    git checkout v0.3.1
+ )
 
 # forbid creation of a main cluster when package is installed
 sed -ri 's/#(create_main_cluster) .*$/\1 = false/' /etc/postgresql-common/createcluster.conf
@@ -185,7 +190,6 @@ for version in $DEB_PG_SUPPORTED_VERSIONS; do
 
     if [ "${version%.*}" -ge 14 ]; then
         cargo pgrx init --pg"${version%.*}" /usr/lib/postgresql/"$version"/bin/pg_config
-        PATH="${PATH}:/usr/lib/postgresql/${version}/bin" pgxn install pgsodium
         PATH="${PATH}:/usr/lib/postgresql/${version}/bin" pgxn install pgmq
         PATH="${PATH}:/usr/lib/postgresql/${version}/bin" pgxn install safeupdate
         (
@@ -202,6 +206,16 @@ for version in $DEB_PG_SUPPORTED_VERSIONS; do
             make PG_CONFIG="/usr/lib/postgresql/$version/bin/pg_config"
             make PG_CONFIG="/usr/lib/postgresql/$version/bin/pg_config" install
             make PG_CONFIG="/usr/lib/postgresql/$version/bin/pg_config" clean             
+        )
+    fi
+
+    # vault install
+    if [ "${version%.*}" -ge 15 ]; then
+        (
+            cd /vault
+            make PG_CONFIG="/usr/lib/postgresql/$version/bin/pg_config"
+            make PG_CONFIG="/usr/lib/postgresql/$version/bin/pg_config" install
+            make PG_CONFIG="/usr/lib/postgresql/$version/bin/pg_config" clean  
         )
     fi
 
@@ -362,6 +376,7 @@ rm -rf /var/lib/apt/lists/* \
         /pg_net \
         /pg_graphql \
         /supautils \
+        /vault \
         "$HOME/.cargo" \
         "$HOME/.rustup" \
          /usr/local/cargo 
