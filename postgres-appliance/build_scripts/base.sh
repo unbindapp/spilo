@@ -209,8 +209,13 @@ for version in $DEB_PG_SUPPORTED_VERSIONS; do
     if [ "${version%.*}" -ge 13 ]; then
         (
             cd /supautils
-            make PG_CONFIG="/usr/lib/postgresql/$version/bin/pg_config"
-            make PG_CONFIG="/usr/lib/postgresql/$version/bin/pg_config" install
+            # supautils extension
+            echo "comment = 'Utility functions for Supabase'" > supautils.control
+            echo "default_version = '2.9.1'" >> supautils.control
+            echo "module_pathname = '$libdir/supautils'" >> supautils.control
+            echo "relocatable = true" >> supautils.control
+            make PG_CONFIG="/usr/lib/postgresql/$version/bin/pg_config" with_llvm=0
+            make PG_CONFIG="/usr/lib/postgresql/$version/bin/pg_config" with_llvm=0 install
             make PG_CONFIG="/usr/lib/postgresql/$version/bin/pg_config" clean             
         )
     fi
