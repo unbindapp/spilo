@@ -24,12 +24,6 @@ class _PostgresqlUpgrade(Postgresql):
             self.config.get('parameters')['shared_preload_libraries'] =\
                     adjust_extensions(shared_preload_libraries, version)
 
-    def no_bg_mon(self):
-        shared_preload_libraries = self.config.get('parameters').get('shared_preload_libraries')
-        if shared_preload_libraries:
-            tmp = filter(lambda a: a != "bg_mon", map(lambda a: a.strip(), shared_preload_libraries.split(",")))
-            self.config.get('parameters')['shared_preload_libraries'] = ",".join(tmp)
-
     def restore_shared_preload_libraries(self):
         if getattr(self, '_old_shared_preload_libraries'):
             self.config.get('parameters')['shared_preload_libraries'] = self._old_shared_preload_libraries
@@ -241,7 +235,6 @@ class _PostgresqlUpgrade(Postgresql):
         if shared_preload_libraries:
             self._old_shared_preload_libraries = self.config.get('parameters')['shared_preload_libraries'] =\
                 append_extensions(shared_preload_libraries, float(version))
-            self.no_bg_mon()
 
         if not self.bootstrap._initdb(initdb_config):
             return False
@@ -260,7 +253,6 @@ class _PostgresqlUpgrade(Postgresql):
 
         if old_shared_preload_libraries:
             self.config.get('parameters')['shared_preload_libraries'] = old_shared_preload_libraries
-            self.no_bg_mon()
         self.configure_server_parameters()
         return True
 

@@ -51,7 +51,6 @@ if [ "$WITH_PERL" != "true" ]; then
     equivs-build perl
 fi
 
-curl -sL "https://github.com/zalando-pg/bg_mon/archive/$BG_MON_COMMIT.tar.gz" | tar xz
 curl -sL "https://github.com/zalando-pg/pg_auth_mon/archive/$PG_AUTH_MON_COMMIT.tar.gz" | tar xz
 curl -sL "https://github.com/cybertec-postgresql/pg_permissions/archive/$PG_PERMISSIONS_COMMIT.tar.gz" | tar xz
 curl -sL "https://github.com/zubkov-andrei/pg_profile/archive/$PG_PROFILE.tar.gz" | tar xz
@@ -177,8 +176,7 @@ for version in $DEB_PG_SUPPORTED_VERSIONS; do
         EXTRA_EXTENSIONS+=("plprofiler" "pg_mon-${PG_MON_COMMIT}")
     fi
 
-    for n in bg_mon-${BG_MON_COMMIT} \
-            pg_auth_mon-${PG_AUTH_MON_COMMIT} \
+    for n in pg_auth_mon-${PG_AUTH_MON_COMMIT} \
             set_user \
             pg_permissions-${PG_PERMISSIONS_COMMIT} \
             pg_profile-${PG_PROFILE} \
