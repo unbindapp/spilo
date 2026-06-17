@@ -96,7 +96,7 @@ jobs:
 
   # Optional: Add a separate step to tag the latest PostgreSQL version as the default "latest" tag
   tag_latest:
-    name: 🏷️ Tag PostgreSQL 17 as Latest
+    name: 🏷️ Tag PostgreSQL 18 as Latest
     runs-on: ubuntu-24.04
     needs: [create_manifests]
     env:
@@ -109,13 +109,13 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Tag PostgreSQL 17 as latest
+      - name: Tag PostgreSQL 18 as latest
         run: |
           docker manifest create ghcr.io/${{ github.repository_owner }}/spilo:latest \
-            --amend ghcr.io/${{ github.repository_owner }}/spilo:17-${{ github.run_id }}-amd64 \
-            --amend ghcr.io/${{ github.repository_owner }}/spilo:17-${{ github.run_id }}-arm64
-            
-          docker manifest annotate --arch amd64 --os linux ghcr.io/${{ github.repository_owner }}/spilo:latest ghcr.io/${{ github.repository_owner }}/spilo:17-${{ github.run_id }}-amd64
-          docker manifest annotate --arch arm64 --os linux ghcr.io/${{ github.repository_owner }}/spilo:latest ghcr.io/${{ github.repository_owner }}/spilo:17-${{ github.run_id }}-arm64
+            --amend ghcr.io/${{ github.repository_owner }}/spilo:18-${{ github.run_id }}-amd64 \
+            --amend ghcr.io/${{ github.repository_owner }}/spilo:18-${{ github.run_id }}-arm64
+
+          docker manifest annotate --arch amd64 --os linux ghcr.io/${{ github.repository_owner }}/spilo:latest ghcr.io/${{ github.repository_owner }}/spilo:18-${{ github.run_id }}-amd64
+          docker manifest annotate --arch arm64 --os linux ghcr.io/${{ github.repository_owner }}/spilo:latest ghcr.io/${{ github.repository_owner }}/spilo:18-${{ github.run_id }}-amd64
 
           docker manifest push ghcr.io/${{ github.repository_owner }}/spilo:latest
