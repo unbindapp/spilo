@@ -12,7 +12,7 @@ jobs:
     name: 🔨 Build Spilo ${{ matrix.pgversion }} for ${{ matrix.arch }}
     strategy:
       matrix:
-        pgversion: [14, 15, 16, 17]
+        pgversion: [14, 15, 16, 17, 18]
         arch: [amd64, arm64]
         include:
           - arch: amd64
@@ -61,7 +61,7 @@ jobs:
     needs: [build_spilo]
     strategy:
       matrix:
-        pgversion: [14, 15, 16, 17]
+        pgversion: [14, 15, 16, 17, 18]
     env:
       GITHUB_RUN_ID: ${{ github.run_id }}
     steps:
