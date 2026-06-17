@@ -32,7 +32,9 @@ if [ "$DEMO" != "true" ]; then
         python3-rsa \
         python3-s3transfer
 
-    find /usr/share/python-babel-localedata/locale-data -type f ! -name 'en_US*.dat' -delete
+    if [ -d /usr/share/python-babel-localedata/locale-data ]; then
+        find /usr/share/python-babel-localedata/locale-data -type f ! -name 'en_US*.dat' -delete
+    fi
 
     pip3 install --break-system-packages protobuf \
             'git+https://github.com/zalando/pg_view.git@master#egg=pg-view'
