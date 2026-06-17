@@ -257,10 +257,12 @@ for version in $DEB_PG_SUPPORTED_VERSIONS; do
         (
             cd /supautils
             # supautils extension
-            echo "comment = 'Utility functions for Supabase'" > supautils.control
-            echo "default_version = '3.2.2'" >> supautils.control
-            echo "module_pathname = '$libdir/supautils'" >> supautils.control
-            echo "relocatable = true" >> supautils.control
+            cat > supautils.control <<'EOF'
+comment = 'Utility functions for Supabase'
+default_version = '3.2.2'
+module_pathname = '$libdir/supautils'
+relocatable = true
+EOF
             make PG_CONFIG="/usr/lib/postgresql/$version/bin/pg_config" with_llvm=0
             make PG_CONFIG="/usr/lib/postgresql/$version/bin/pg_config" with_llvm=0 install
             make PG_CONFIG="/usr/lib/postgresql/$version/bin/pg_config" clean             
