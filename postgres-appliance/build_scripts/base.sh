@@ -13,6 +13,11 @@ sed -i 's/^#\s*\(deb.*universe\)$/\1/g' /etc/apt/sources.list
 
 apt-get update
 
+LIBSSL_DEV_VER=$(apt-cache madison libssl-dev | awk 'NR==1 {print $3}')
+if [ -n "$LIBSSL_DEV_VER" ]; then
+    apt-get install -y --allow-downgrades "libssl3t64=${LIBSSL_DEV_VER}"
+fi
+
 BUILD_PACKAGES=(devscripts equivs build-essential fakeroot debhelper git gcc libc6-dev make cmake libevent-dev libbrotli-dev libssl-dev libkrb5-dev pgxnclient)
 if [ "$DEMO" = "true" ]; then
     export DEB_PG_SUPPORTED_VERSIONS="$PGVERSION"
