@@ -7,6 +7,8 @@ echo -e 'APT::Install-Recommends "0";\nAPT::Install-Suggests "0";' > /etc/apt/ap
 apt-get update
 apt-get -y upgrade
 apt-get install -y curl ca-certificates less locales jq vim-tiny gnupg1 cron runit dumb-init libcap2-bin rsync sysstat gpg
+update-ca-certificates --fresh
+apt-mark manual ca-certificates curl gnupg1 gpg
 
 ln -s chpst /usr/bin/envdir
 
@@ -36,11 +38,16 @@ DISTRIB_CODENAME=$(sed -n 's/DISTRIB_CODENAME=//p' /etc/lsb-release)
 for t in deb deb-src; do
     echo "$t http://apt.postgresql.org/pub/repos/apt/ ${DISTRIB_CODENAME}-pgdg main" >> /etc/apt/sources.list.d/pgdg.list
 done
-curl -s -o - https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor > /etc/apt/trusted.gpg.d/apt.postgresql.org.gpg
+curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor > /etc/apt/trusted.gpg.d/apt.postgresql.org.gpg
+test -s /etc/apt/trusted.gpg.d/apt.postgresql.org.gpg
 
 # add TimescaleDB repository
+mkdir -p /etc/apt/keyrings
 echo "deb [signed-by=/etc/apt/keyrings/timescale_timescaledb-archive-keyring.gpg] https://packagecloud.io/timescale/timescaledb/ubuntu/ ${DISTRIB_CODENAME} main" | tee /etc/apt/sources.list.d/timescaledb.list
 curl -fsSL https://packagecloud.io/timescale/timescaledb/gpgkey | gpg --dearmor | tee /etc/apt/keyrings/timescale_timescaledb-archive-keyring.gpg > /dev/null
+test -s /etc/apt/keyrings/timescale_timescaledb-archive-keyring.gpg
+
+apt-get update
 
 # Clean up
 apt-get purge -y libcap2-bin
