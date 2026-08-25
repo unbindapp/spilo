@@ -71,7 +71,7 @@ git clone https://github.com/michelp/pgjwt.git /pgjwt
 git clone https://github.com/supabase/pg_net.git /pg_net
  (
     cd /pg_net
-    git checkout v0.20.3
+    git checkout v0.20.5
  )
 git clone https://github.com/supabase/pg_graphql.git /pg_graphql
  (
@@ -81,7 +81,7 @@ git clone https://github.com/supabase/pg_graphql.git /pg_graphql
 git clone https://github.com/supabase/supautils.git /supautils
  (
     cd /supautils
-    git checkout v3.2.2
+    git checkout v3.4.1
  )
 git clone https://github.com/supabase/vault.git /vault
  (
@@ -259,7 +259,7 @@ for version in $DEB_PG_SUPPORTED_VERSIONS; do
             # supautils extension
             cat > supautils.control <<'EOF'
 comment = 'Utility functions for Supabase'
-default_version = '3.2.2'
+default_version = '3.4.1'
 module_pathname = '$libdir/supautils'
 relocatable = true
 EOF

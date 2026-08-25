@@ -18,7 +18,7 @@ FROM $BASE_IMAGE as dependencies-builder
 
 ARG DEMO
 
-ENV WALG_VERSION=v3.0.8
+ENV WALG_VERSION=v3.0.9
 
 COPY build_scripts/dependencies.sh /builddeps/
 
@@ -53,10 +53,10 @@ ARG DEB_PG_SUPPORTED_VERSIONS="$PGOLDVERSIONS $PGVERSION"
 
 # Install PostgreSQL, extensions and contribs
 ENV POSTGIS_VERSION=3.6 \
-    PG_AUTH_MON_COMMIT=fe099eef7662cbc85b0b79191f47f52f1e96b779 \
+    PG_AUTH_MON_COMMIT=2959291d13ff38b555460239d7321e0c292e1ac3 \
     PG_MON_COMMIT=88ac7b58348aa061c814982defc170644f368f39 \
     PLPROFILER=REL4_2_5 \
-    PG_PROFILE=4.11 \
+    PG_PROFILE=4.15 \
     PAM_OAUTH2=v1.0.1
 
 WORKDIR /builddeps
@@ -68,7 +68,7 @@ COPY --from=dependencies-builder /builddeps/wal-g /usr/local/bin/
 COPY build_scripts/patroni.sh build_scripts/compress_build.sh /builddeps/
 
 # Install patroni
-ENV PATRONIVERSION=4.1.3
+ENV PATRONIVERSION=4.1.5
 
 WORKDIR /
 
