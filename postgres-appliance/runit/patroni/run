@@ -24,9 +24,12 @@ then
 fi
 
 # Only small subset of environment variables is allowed. We don't want accidentally disclose sensitive information
-for E in $(printenv -0 | tr '\n' ' ' | sed 's/\x00/\n/g' | grep -vE '^(KUBERNETES_(SERVICE|PORT|ROLE)[_=]|((POD_(IP|NAMESPACE))|HOSTNAME|PATH|PGHOME|LC_ALL|ENABLE_PG_MON)=)' | sed 's/=.*//g'); do
+for E in $(printenv -0 | tr '\n' ' ' | sed 's/\x00/\n/g' | grep -vE '^(KUBERNETES_(SERVICE|PORT|ROLE)[_=]|((POD_(IP|NAMESPACE))|HOSTNAME|PATH|PGHOME|LC_ALL|ENABLE_PG_MON|ENABLE_PG_TEXTSEARCH)=)' | sed 's/=.*//g'); do
     unset $E
 done
+
+export MALLOC_ARENA_MAX=1
+export PG_MALLOC_ARENA_MAX=
 
 exec 2>&1
 exec $CHRT $CHPST env HOME=/home/postgres patroni /home/postgres/postgres.yml
